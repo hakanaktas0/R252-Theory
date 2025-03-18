@@ -17,7 +17,7 @@ print("All seeds set.")
 
 
 from dataset import CoraDataset
-from models import SimpleGNN
+from models import SimpleGNN, SimpleLinearGNN
 from utils import *
 
 # Lets download our cora dataset and get the splits
@@ -36,19 +36,6 @@ A = cora_data.get_adjacency_matrix()
 
 
 
-# A = torch.ones((A.shape),dtype=torch.float32)
-print(get_num_ones(A))
-print(check_symmetric(A))
-# A = shuffle_symmetric(A)
-
-# A = prune_edges_to_r(A,2)
-# A = make_r_regular(A,5)
-# A = add_random_edges(A,5000)
-print(get_num_ones(A))
-A = np.array(A)
-np.fill_diagonal(A, 1)
-A = torch.tensor(A,dtype=torch.float32)
-
 
 X = cora_data.get_fullx()
 model = SimpleGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
@@ -62,3 +49,15 @@ train_stats_gnn_cora = train_eval_loop_gnn_cora(model, X, train_y, train_mask,
                                           X, test_y, test_mask
                                        )
 plot_stats(train_stats_gnn_cora, name="GNN_Cora")
+
+
+new_model = SimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
+
+new_model.load_weights(model.state_dict(),A)
+
+new_model.freeze_weights()
+
+train_stats_gnn_cora = train_eval_loop_gnn_cora(new_model, X, train_y, train_mask,
+                                          X, valid_y, valid_mask,
+                                          X, test_y, test_mask
+                                       )

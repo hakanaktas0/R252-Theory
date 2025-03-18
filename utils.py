@@ -1,7 +1,7 @@
 # @title [RUN] Helper functions for managing experiments, training, and evaluating models
 import torch.nn.functional as F
 from torch.optim import Adam
-
+import torch
 import matplotlib.pyplot as plt
 import numpy as np
 def update_stats(training_stats, epoch_stats):
@@ -49,6 +49,11 @@ def train_gnn_cora(X, y, mask, model, optimiser):
     optimiser.zero_grad()
     y_hat = model(X)[mask]
     loss = F.cross_entropy(y_hat, y)
+    # l1_lambda = 10000
+    # l1_norm = 0
+    # for layer in model.gcn_layers:
+    #     l1_norm += torch.norm(layer.left_weights, p=1)
+    # loss += l1_lambda * l1_norm
     loss.backward()
     optimiser.step()
     return loss.data
@@ -72,7 +77,7 @@ def train_eval_loop_gnn_cora(model, train_x, train_y, train_mask,
     optimiser = Adam(model.parameters(), lr=0.001)
     training_stats = None
     # Training loop
-    for epoch in range(1000):
+    for epoch in range(100):
         train_loss = train_gnn_cora(train_x, train_y, train_mask, model, optimiser)
         train_acc = evaluate_gnn_cora(train_x, train_y, train_mask, model)
         valid_acc = evaluate_gnn_cora(valid_x, valid_y, valid_mask, model)
