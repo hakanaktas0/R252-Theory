@@ -53,49 +53,21 @@ class LinearLayer(Module):
         self.output_dim = output_dim
         self.A = A
 
-        # ============ YOUR CODE HERE ==============
-        # Sample answer
-        # Compute symmetric norm
-        I = torch.eye(A.size(0), device=A.device)
-        A_hat = A + I
-        D_hat = torch.diag(A_hat.sum(dim=1))
-        D_inv_sqrt = torch.linalg.inv(torch.sqrt(D_hat))
-        self.adj_norm = D_inv_sqrt @ A_hat @ D_inv_sqrt
-
-        # + Simple linear transformation and non-linear activation
         self.linear = torch.nn.Linear(input_dim, output_dim)
-        # self.left_linear = torch.nn.Linear(self.A.shape[0], self.A.shape[1], bias=False)
         self.left_weights = torch.nn.Parameter(torch.randn(self.A.shape[0], self.A.shape[1]))
-        # with torch.no_grad:
-        #     self.left_weights.copy_(self.adj_norm)
-        # self.left_weights = torch.nn.Parameter(self.adj_norm.clone())
         self.activation = torch.nn.ReLU()
-        # ===========================================
 
     def forward(self, x):
-        """Implements the forward pass for the layer
-
-        Args:
-            x (torch.Tensor): input node feature matrix
-        """
-        # ============ YOUR CODE HERE ==============
-        # Sample answer
-        # with torch.no_grad():
-        #     self.left_weights.copy_((self.left_weights + self.left_weights.T) / 2)
-        x = self.left_weights @ x
-        # x = self.adj_norm @ x
+        L_tril = torch.tril(self.L)
+        symmetric_matrix = L_tril + L_tril.T - torch.diag(torch.diag(L_tril))
+        x = symmetric_matrix @ x
         x = self.linear(x)
         x = self.activation(x)
-        # ===========================================
         return x
-    def load(self,weights):
+    
+    def load(self, weights):
         weights = 0
 
-
-
-
-
-# Lets see the GCNLayer in action!
 
 class SimpleGNN(Module):
     """A Simple GNN model using the GCNLayer for node classification

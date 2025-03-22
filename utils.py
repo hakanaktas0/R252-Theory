@@ -4,6 +4,8 @@ from torch.optim import Adam
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+
+
 def update_stats(training_stats, epoch_stats):
     """ Store metrics along the training
     Args:
@@ -19,7 +21,6 @@ def update_stats(training_stats, epoch_stats):
     for key,val in epoch_stats.items():
         training_stats[key].append(val)
     return training_stats
-
 
 def plot_stats(training_stats, figsize=(5, 5), name=""):
     """ Create one plot for each metric stored in training_stats
@@ -41,8 +42,6 @@ def plot_stats(training_stats, figsize=(5, 5), name=""):
         axx.set_ylabel(key)
         axx.legend()
     plt.title(name)
-
-
 
 def train_gnn_cora(X, y, mask, model, optimiser):
     model.train()
