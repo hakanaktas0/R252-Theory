@@ -58,7 +58,7 @@ class LinearLayer(Module):
         self.activation = torch.nn.ReLU()
 
     def forward(self, x):
-        L_tril = torch.tril(self.L)
+        L_tril = torch.tril(self.left_weights)
         symmetric_matrix = L_tril + L_tril.T - torch.diag(torch.diag(L_tril))
         x = symmetric_matrix @ x
         x = self.linear(x)

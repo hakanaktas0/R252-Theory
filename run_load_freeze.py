@@ -29,13 +29,7 @@ print(f"Train shape x: {train_x.shape}, y: {train_y.shape}")
 print(f"Val shape x: {valid_x.shape}, y: {valid_y.shape}")
 print(f"Test shape x: {test_x.shape}, y: {test_y.shape}")
 
-
-
 A = cora_data.get_adjacency_matrix()
-
-
-
-
 
 X = cora_data.get_fullx()
 model = SimpleGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
