@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-
+from sklearn.metrics.pairwise import cosine_similarity
 
 def add_random_edges(adj_matrix, n):
     adj_matrix = np.array(adj_matrix)
