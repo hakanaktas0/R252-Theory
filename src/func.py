@@ -23,8 +23,6 @@ def add_random_edges(adj_matrix, n):
 
     return torch.tensor(adj_matrix)
 
-
-
 def get_num_ones(A):
     A = A.detach().cpu().numpy()
     num = 0
