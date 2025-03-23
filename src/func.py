@@ -1,11 +1,11 @@
 import numpy as np
 import random
 
-import torch
 
 
 def add_random_edges(adj_matrix, n):
     adj_matrix = np.array(adj_matrix)
+    adj_matrix = adj_matrix.copy()
     if adj_matrix.shape[0] != adj_matrix.shape[1]:
         raise ValueError("Adjacency matrix must be square.")
 
@@ -21,10 +21,10 @@ def add_random_edges(adj_matrix, n):
             adj_matrix[i, j] = 1
             edges_added += 1
 
-    return torch.tensor(adj_matrix)
+    return adj_matrix
 
 def get_num_ones(A):
-    A = A.detach().cpu().numpy()
+    A = np.array(A)
     num = 0
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
@@ -33,7 +33,7 @@ def get_num_ones(A):
     return num
 
 def check_symmetric(A):
-    A = A.detach().cpu().numpy()
+    A = np.array(A)
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
             if A[i, j] != A[j,i]:
@@ -41,15 +41,18 @@ def check_symmetric(A):
     return True
 
 def shuffle(A):
+    A = np.array(A)
     ones = get_num_ones(A)
+    A = A.copy()
     rang = A.shape[0] * A.shape[1]
     flags = np.random.choice(rang, size=ones,replace=False)
     new = np.zeros(rang,dtype=np.float32)
     new[flags] = 1
-    return torch.tensor(new.reshape((A.shape[0],A.shape[1])))
+    return new.reshape((A.shape[0],A.shape[1]))
 
 
 def shuffle_symmetric(A):
+    A = np.array(A).copy()
     ones = get_num_ones(A) // 2
     rang = A.shape[0] * A.shape[1]
     flags = np.random.choice(rang, size=ones, replace=False)
@@ -60,11 +63,13 @@ def shuffle_symmetric(A):
         for j in range(A.shape[1]):
             if new[i, j] == 1:
                 new[j,i] = 1
-    return torch.tensor(new)
+    return new
 # Instantiate our model and optimiser
 
 def make_r_regular(adj_matrix, r):
     n = len(adj_matrix)
+
+    adj_matrix = adj_matrix.copy()
 
     if r >= n:
         raise ValueError("r must be less than the number of vertices.")
@@ -93,11 +98,12 @@ def make_r_regular(adj_matrix, r):
     # if not np.all(degrees == r):
     #     raise ValueError("Unable to make the given graph r-regular with the current structure.")
 
-    return torch.tensor(adj_matrix,dtype=torch.float32)
+    return adj_matrix
 
 
 def prune_edges_to_r(adj_matrix, r):
     n = len(adj_matrix)
+    adj_matrix = adj_matrix.copy()
     adj_matrix = np.array(adj_matrix)
 
     # Remove self loops if any
@@ -116,6 +122,42 @@ def prune_edges_to_r(adj_matrix, r):
                 degrees[i] -= 1
                 degrees[neighbor] -= 1
 
-    return torch.tensor(adj_matrix,dtype=torch.float32)
+    return adj_matrix
+
+
+def compute_smoothness_dense(adj, features):
+    D = np.diag(np.sum(adj, axis=1))
+    L = D - adj
+
+    numerator = np.trace(features.T @ L @ features)
+    denominator = np.trace(features.T @ D @ features)
+
+    smoothness = numerator / denominator
+    return smoothness
+
+
+
+
+def alter_dense_adjacency(features, adj, threshold=0.8, mode='increase'):
+    sim_matrix = cosine_similarity(features)
+    np.fill_diagonal(sim_matrix, 0)  # Ignore self-connections
+
+    adj_modified = adj.copy()
+
+    if mode == 'increase':
+        # Add edges between nodes with high similarity
+        adj_modified[sim_matrix > threshold] = 1
+    elif mode == 'decrease':
+        # Add edges between nodes with low similarity
+        adj_modified[sim_matrix < threshold] = 1
+
+    # Ensure symmetry
+    adj_modified = np.maximum(adj_modified, adj_modified.T)
+
+    # Ensure binary adjacency (0/1)
+    adj_modified = (adj_modified > 0).astype(int)
+
+    return adj_modified
+
 
 
