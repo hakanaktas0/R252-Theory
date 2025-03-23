@@ -1,7 +1,7 @@
 #@title [RUN] Set random seed for deterministic results
 import random
 import torch
-from func import *
+from src.func import *
 import numpy as np
 def seed(seed=0):
     random.seed(seed)
@@ -16,9 +16,9 @@ seed(0)
 print("All seeds set.")
 
 
-from dataset import CoraDataset
-from models import SimpleGNN, SimpleLinearGNN
-from utils import *
+from src.dataset import CoraDataset
+from src.models import SimpleGNN, SimpleLinearGNN
+from src.utils import *
 
 # Lets download our cora dataset and get the splits
 cora_data = CoraDataset()
@@ -44,8 +44,7 @@ train_stats_gnn_cora = train_eval_loop_gnn_cora(model, X, train_y, train_mask,
                                        )
 plot_stats(train_stats_gnn_cora, name="GNN_Cora")
 
-
-new_model = SimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
+new_model = SimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1, initialize_true_adj=True)
 
 new_model.load_weights(model.state_dict(),A)
 

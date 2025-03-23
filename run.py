@@ -1,7 +1,7 @@
 #@title [RUN] Set random seed for deterministic results
 import random
 import torch
-from func import *
+from src.func import *
 import numpy as np
 def seed(seed=0):
     random.seed(seed)
@@ -16,9 +16,9 @@ seed(0)
 print("All seeds set.")
 
 
-from dataset import CoraDataset
-from models import SimpleGNN
-from utils import *
+from src.dataset import CoraDataset
+from src.models import SimpleGNN
+from src.utils import *
 
 # Lets download our cora dataset and get the splits
 cora_data = CoraDataset()

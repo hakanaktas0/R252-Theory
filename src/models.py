@@ -47,20 +47,24 @@ class GCNLayer(Module):
 
 
 class LinearLayer(Module):
-    def __init__(self, input_dim, output_dim, A):
+    def __init__(self, input_dim, output_dim, A, initialize_true_adj=False):
         super(LinearLayer, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.A = A
 
         self.linear = torch.nn.Linear(input_dim, output_dim)
-        self.left_weights = torch.nn.Parameter(torch.randn(self.A.shape[0], self.A.shape[1]))
+        if initialize_true_adj:
+            self.left_weights = torch.nn.Parameter(torch.randn(self.A.shape[0], self.A.shape[1]))
+        else:
+            self.left_weights = torch.nn.Parameter(A)
         self.activation = torch.nn.ReLU()
 
     def forward(self, x):
         L_tril = torch.tril(self.left_weights)
         symmetric_matrix = L_tril + L_tril.T - torch.diag(torch.diag(L_tril))
         x = symmetric_matrix @ x
+        # x = self.left_weights @ x
         x = self.linear(x)
         x = self.activation(x)
         return x
@@ -122,7 +126,7 @@ class SimpleLinearGNN(Module):
         output_dim (int): Dimensionality of the output softmax distribution
         A (torch.Tensor): 2-D adjacency matrix
     """
-    def __init__(self, input_dim, hidden_dim, output_dim, num_gcn_layers, A):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_gcn_layers, A, initialize_true_adj=False):
         super(SimpleLinearGNN, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -130,11 +134,11 @@ class SimpleLinearGNN(Module):
 
         # Note: if a single layer is used hidden_dim should be the same as input_dim
         if num_gcn_layers > 1:
-          self.gcn_layers = [LinearLayer(input_dim, hidden_dim, A)]
-          self.gcn_layers += [LinearLayer(hidden_dim, hidden_dim, A) for i in range(num_gcn_layers-2)]
-          self.gcn_layers += [LinearLayer(hidden_dim, output_dim, A)]
+          self.gcn_layers = [LinearLayer(input_dim, hidden_dim, A, initialize_true_adj)]
+          self.gcn_layers += [LinearLayer(hidden_dim, hidden_dim, A, initialize_true_adj) for i in range(num_gcn_layers-2)]
+          self.gcn_layers += [LinearLayer(hidden_dim, output_dim, A, initialize_true_adj)]
         else:
-          self.gcn_layers = [LinearLayer(input_dim, output_dim, A)]
+          self.gcn_layers = [LinearLayer(input_dim, output_dim, A, initialize_true_adj)]
 
         self.gcn_layers = ModuleList(self.gcn_layers)
         self.num_gcn_layers = num_gcn_layers
