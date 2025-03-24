@@ -81,9 +81,9 @@ def evaluate_gnn_cora(X, y, mask, model):
 # Training loop
 def train_eval_loop_gnn_cora(model, train_x, train_y, train_mask,
                         valid_x, valid_y, valid_mask,
-                        test_x, test_y, test_mask
+                        test_x, test_y, test_mask, weight_decay
                     ):
-    optimiser = Adam(model.parameters(), lr=0.001)
+    optimiser = Adam(model.parameters(), lr=0.001, weight_decay=weight_decay)
     training_stats = None
     # Training loop
     for epoch in range(100):

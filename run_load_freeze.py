@@ -40,7 +40,7 @@ test_mask = cora_data.test_mask
 # Run training loop
 train_stats_gnn_cora = train_eval_loop_gnn_cora(model, X, train_y, train_mask,
                                           X, valid_y, valid_mask,
-                                          X, test_y, test_mask
+                                          X, test_y, test_mask, weight_decay=0
                                        )
 plot_stats(train_stats_gnn_cora, name="GNN_Cora")
 
@@ -54,5 +54,5 @@ for name, param in new_model.named_parameters():
 
 train_stats_gnn_cora = train_eval_loop_gnn_cora(new_model, X, train_y, train_mask,
                                           X, valid_y, valid_mask,
-                                          X, test_y, test_mask
+                                          X, test_y, test_mask, weight_decay=0.01
                                        )
