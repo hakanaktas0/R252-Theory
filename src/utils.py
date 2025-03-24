@@ -43,11 +43,21 @@ def plot_stats(training_stats, figsize=(5, 5), name=""):
         axx.legend()
     plt.title(name)
 
+def dirichlet_energy_loss(A, X):
+    D = torch.diag(torch.sum(A,dim=1))
+    L = D - A
+    return torch.trace(X.T @ L @ X)
+
+
 def train_gnn_cora(X, y, mask, model, optimiser):
     model.train()
     optimiser.zero_grad()
     y_hat = model(X)[mask]
     loss = F.cross_entropy(y_hat, y)
+    # d_loss = dirichlet_energy_loss(model.gcn_layers[0].left_weights, X)
+    # loss = loss + d_loss * 0.01
+
+
     # l1_lambda = 10000
     # l1_norm = 0
     # for layer in model.gcn_layers:
