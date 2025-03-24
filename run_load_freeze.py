@@ -48,7 +48,9 @@ new_model = SimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidd
 
 new_model.load_weights(model.state_dict(),A)
 
-new_model.freeze_weights()
+for name, param in new_model.named_parameters():
+    if name == "gcn_layers.0.linear.weight":
+        param.requires_grad = False
 
 train_stats_gnn_cora = train_eval_loop_gnn_cora(new_model, X, train_y, train_mask,
                                           X, valid_y, valid_mask,
