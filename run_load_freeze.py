@@ -20,6 +20,11 @@ from src.dataset import CoraDataset
 from src.models import SimpleGNN, SimpleLinearGNN
 from src.utils import *
 
+INITIALIZE_TRUE_ADJ = True
+ADJ_POSITIVE = False
+WEIGHT_DECAY = 0.1
+EXPERIMENT_NAME = 'v2'
+
 # Lets download our cora dataset and get the splits
 cora_data = CoraDataset()
 train_x, train_y, valid_x, valid_y, test_x, test_y = cora_data.train_val_test_split()
@@ -44,7 +49,7 @@ train_stats_gnn_cora = train_eval_loop_gnn_cora(model, X, train_y, train_mask,
                                        )
 plot_stats(train_stats_gnn_cora, name="GNN_Cora")
 
-new_model = SimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1, initialize_true_adj=True)
+new_model = SimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1, initialize_true_adj=INITIALIZE_TRUE_ADJ, adj_positive=ADJ_POSITIVE)
 
 new_model.load_weights(model.state_dict(),A)
 
@@ -54,5 +59,8 @@ for name, param in new_model.named_parameters():
 
 train_stats_gnn_cora = train_eval_loop_gnn_cora(new_model, X, train_y, train_mask,
                                           X, valid_y, valid_mask,
-                                          X, test_y, test_mask, weight_decay=0.01
+                                          X, test_y, test_mask, weight_decay=WEIGHT_DECAY
                                        )
+
+matrix_save_dir = f'adj_matrices/{EXPERIMENT_NAME}'
+new_model.save_adj_matrices(dir=matrix_save_dir)
