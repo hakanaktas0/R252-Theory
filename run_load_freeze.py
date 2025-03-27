@@ -22,8 +22,8 @@ from src.utils import *
 
 INITIALIZE_TRUE_ADJ = True
 ADJ_POSITIVE = False
-WEIGHT_DECAY = 0.1
-EXPERIMENT_NAME = 'v2'
+WEIGHT_DECAY = 0.001
+EXPERIMENT_NAME = 'adj_nonpos_wd0001'
 
 # Lets download our cora dataset and get the splits
 cora_data = CoraDataset()
@@ -49,6 +49,8 @@ train_stats_gnn_cora = train_eval_loop_gnn_cora(model, X, train_y, train_mask,
                                        )
 plot_stats(train_stats_gnn_cora, name="GNN_Cora")
 
+matrix_save_dir = f'adj_matrices/{EXPERIMENT_NAME}'
+
 new_model = SimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1, initialize_true_adj=INITIALIZE_TRUE_ADJ, adj_positive=ADJ_POSITIVE)
 
 new_model.load_weights(model.state_dict(),A)
@@ -62,5 +64,5 @@ train_stats_gnn_cora = train_eval_loop_gnn_cora(new_model, X, train_y, train_mas
                                           X, test_y, test_mask, weight_decay=WEIGHT_DECAY
                                        )
 
-matrix_save_dir = f'adj_matrices/{EXPERIMENT_NAME}'
 new_model.save_adj_matrices(dir=matrix_save_dir)
+torch.save(model.gcn_layers[0].linear.state_dict(), f'{matrix_save_dir}/linear_weights.pt')

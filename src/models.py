@@ -139,6 +139,7 @@ class SimpleLinearGNN(Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.A = A
+        self.adj_positive = adj_positive
 
         # Note: if a single layer is used hidden_dim should be the same as input_dim
         if num_gcn_layers > 1:
@@ -185,9 +186,47 @@ class SimpleLinearGNN(Module):
         adj_asymmetric = self.gcn_layers[0].state_dict()['left_weights']
         adj_L = torch.tril(adj_asymmetric)
         adj_symmetric = adj_L + adj_L.T - torch.diag(torch.diag(adj_asymmetric))
+        if self.adj_positive:
+            adj_symmetric = torch.abs(adj_symmetric)
         adj_np = adj_symmetric.numpy()
 
         if os.path.exists(dir):
             shutil.rmtree(dir)
         os.makedirs(dir)
         np.save(f'{dir}/learned_adjacency.npy', adj_np)
+
+class CurveFinder(Module):
+    def __init__(self, input_dim, output_dim, adj_1, adj_2, init_midpoint=False):
+        super(CurveFinder, self).__init__()
+        self.adj_1 = adj_1
+        self.adj_2 = adj_2
+
+        self.linear = torch.nn.Linear(input_dim, output_dim)
+
+        if init_midpoint:
+            self.theta_param = (self.adj_1 + self.adj_2)/2
+        else:
+            self.theta_param = torch.nn.Parameter(torch.randn(self.adj_1.shape[0], self.adj_1.shape[1]))
+
+        self.activation = ReLU()
+
+    def forward(self, x):
+        L_tril = torch.tril(self.theta_param)
+        symmetric_theta = L_tril + L_tril.T - torch.diag(torch.diag(L_tril))
+
+        curve_sampled = self.sample_weights(symmetric_theta)
+
+        x = curve_sampled @ x
+        x = self.linear(x)
+        x = self.activation(x)
+
+        return x
+
+
+    def sample_weights(self, symmetric_theta):
+        t = torch.rand(1)
+
+        if t<0.5:
+            return 2*((t*symmetric_theta) + (0.5-t)*self.adj_1)
+        else:
+            return 2*((t-0.5)*self.adj_2 + (1-t)*symmetric_theta)

@@ -159,5 +159,3 @@ def alter_dense_adjacency(features, adj, threshold=0.8, mode='increase'):
 
     return adj_modified
 
-
-
