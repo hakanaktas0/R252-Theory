@@ -17,7 +17,7 @@ print("All seeds set.")
 
 
 from src_smothness.dataset import CoraDataset
-from src_smothness.models import MaskedCommonWeightSimpleLinearGNN
+from src_smothness.models import *
 from src_smothness.utils import *
 
 # Lets download our cora dataset and get the splits
@@ -29,6 +29,15 @@ print(f"Train shape x: {train_x.shape}, y: {train_y.shape}")
 print(f"Val shape x: {valid_x.shape}, y: {valid_y.shape}")
 print(f"Test shape x: {test_x.shape}, y: {test_y.shape}")
 
+
+import pickle
+
+with open('fine-tune-logs/shuffled-A.pkl','rb') as f:
+    shuffle_A = pickle.load(f)
+
+
+with open('fine-tune-logs/shuffled-sym-A.pkl','rb') as f:
+    shuffle_sym = pickle.load(f)
 
 
 A = cora_data.get_adjacency_matrix()
@@ -57,9 +66,13 @@ print(check_symmetric(A))
 # compute_smoothness_dense(np.array(alter_dense_adjacency(features,A)),features)
 # A = torch.tensor(A,dtype=torch.float32)
 
+# A = shuffle(A)
+A = torch.tensor(A)
 
 X = cora_data.get_fullx()
 model = MaskedCommonWeightSimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
+
+# model = SimpleLinearGNN_Symmetric(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
 train_mask = cora_data.train_mask
 valid_mask = cora_data.valid_mask
 test_mask = cora_data.test_mask
@@ -69,6 +82,12 @@ train_stats_gnn_cora = train_eval_loop_gnn_cora(model, X, train_y, train_mask,
                                           X, valid_y, valid_mask,
                                           X, test_y, test_mask
                                        )
+
+import pickle
+
+with open('fine-tune-logs/duz-A.pkl', 'wb') as f:
+    pickle.dump(train_stats_gnn_cora, f)
+
 plot_stats(train_stats_gnn_cora, name="GNN_Cora")
 
 # Linear elementwise multiplication to force sparsity.

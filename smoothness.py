@@ -47,6 +47,7 @@ def feature_homophily_ratio(A, X):
 
 # Adjust smoothness based on Feature Homophily
 def adjust_smoothness_homophily(A, X, increase=True, num_edges=1):
+    A = A.copy()
     sim = cosine_similarity(X)
     G = nx.from_numpy_array(A)
 
@@ -119,5 +120,101 @@ def adjust_label_homophily(A, labels, increase=True, num_edges=1):
             A[edge[0], edge[1]] = A[edge[1], edge[0]] = 1
         else:
             A[edge[0], edge[1]] = A[edge[1], edge[0]] = 0
+
+    return A
+
+def prune_edges_dirichlet(A, X, num_edges=1):
+    G = nx.from_numpy_array(A)
+    edges = list(G.edges())
+    current_energy = dirichlet_energy(A, X)
+    scores = []
+
+    for edge in edges:
+        A_mod = A.copy()
+        A_mod[edge[0], edge[1]] = A_mod[edge[1], edge[0]] = 0
+        energy = dirichlet_energy(A_mod, X)
+        if energy < current_energy:
+            scores.append((edge, energy))
+
+    scores.sort(key=lambda x: x[1])
+    for edge, _ in scores[:num_edges]:
+        A[edge[0], edge[1]] = A[edge[1], edge[0]] = 0
+
+    return A
+
+
+def prune_edges_local_variation(A, X, num_edges=1):
+    G = nx.from_numpy_array(A)
+    edges = list(G.edges())
+    current_lv = local_variation_smoothness(A, X)
+    scores = []
+
+    for edge in edges:
+        A_mod = A.copy()
+        A_mod[edge[0], edge[1]] = A_mod[edge[1], edge[0]] = 0
+        lv = local_variation_smoothness(A_mod, X)
+        if lv < current_lv:
+            scores.append((edge, lv))
+
+    scores.sort(key=lambda x: x[1])
+    for edge, _ in scores[:num_edges]:
+        A[edge[0], edge[1]] = A[edge[1], edge[0]] = 0
+
+    return A
+
+
+def prune_edges_label_homophily(A, labels, num_edges=1):
+    G = nx.from_numpy_array(A)
+    edges = list(G.edges())
+    scores = [(edge, labels[edge[0]] != labels[edge[1]]) for edge in edges]
+
+    scores.sort(key=lambda x: x[1], reverse=True)  # remove edges between different labels
+    for edge, diff in scores[:num_edges]:
+        if diff:
+            A[edge[0], edge[1]] = A[edge[1], edge[0]] = 0
+
+    return A
+
+def prune_edges_homophily(A, X, num_edges=1):
+    sim = cosine_similarity(X)
+    G = nx.from_numpy_array(A)
+    edges = list(G.edges())
+    scores = [(edge, sim[edge[0], edge[1]]) for edge in edges]
+
+    scores.sort(key=lambda x: x[1])  # remove edges with lowest similarity
+    for edge, _ in scores[:num_edges]:
+        A[edge[0], edge[1]] = A[edge[1], edge[0]] = 0
+
+    return A
+
+
+def rewire_edges_smoothness(A, X, num_edges=1):
+    G = nx.from_numpy_array(A)
+    current_energy = dirichlet_energy(A, X)
+
+    for _ in range(num_edges):
+        edges = list(G.edges())
+        non_edges = list(nx.non_edges(G))
+        best_improvement = 0
+        best_swap = None
+
+        for edge in edges:
+            for non_edge in non_edges:
+                A_mod = A.copy()
+                A_mod[edge[0], edge[1]] = A_mod[edge[1], edge[0]] = 0
+                A_mod[non_edge[0], non_edge[1]] = A_mod[non_edge[1], non_edge[0]] = 1
+                new_energy = dirichlet_energy(A_mod, X)
+
+                improvement = current_energy - new_energy
+                if improvement > best_improvement:
+                    best_improvement = improvement
+                    best_swap = (edge, non_edge)
+
+        if best_swap:
+            edge, non_edge = best_swap
+            A[edge[0], edge[1]] = A[edge[1], edge[0]] = 0
+            A[non_edge[0], non_edge[1]] = A[non_edge[1], non_edge[0]] = 1
+            G = nx.from_numpy_array(A)
+            current_energy -= best_improvement
 
     return A

@@ -17,7 +17,7 @@ print("All seeds set.")
 
 
 from src_smothness.dataset import CoraDataset
-from src_smothness.models import MaskedCommonWeightSimpleLinearGNN
+from src_smothness.models import *
 from src_smothness.utils import *
 
 # Lets download our cora dataset and get the splits
@@ -59,7 +59,9 @@ print(check_symmetric(A))
 
 
 X = cora_data.get_fullx()
-model = MaskedCommonWeightSimpleLinearGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
+model = SimpleGNN(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
+
+# model = SimpleLinearGNN_Symmetric(input_dim=train_x.shape[-1], output_dim=7, A=A, hidden_dim=train_x.shape[-1], num_gcn_layers=1)
 train_mask = cora_data.train_mask
 valid_mask = cora_data.valid_mask
 test_mask = cora_data.test_mask
@@ -69,6 +71,12 @@ train_stats_gnn_cora = train_eval_loop_gnn_cora(model, X, train_y, train_mask,
                                           X, valid_y, valid_mask,
                                           X, test_y, test_mask
                                        )
+
+import pickle
+
+with open('graph-constraint-logs-noReLu/GNN.pkl', 'wb') as f:
+    pickle.dump(train_stats_gnn_cora, f)
+
 plot_stats(train_stats_gnn_cora, name="GNN_Cora")
 
 # Linear elementwise multiplication to force sparsity.
